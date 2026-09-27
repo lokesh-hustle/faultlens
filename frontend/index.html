@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FaultLens | Enterprise Observability & Root Cause Analysis</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="dark-theme">
+    <div id="app-container">
+        <!-- Top Navigation Header -->
+        <header class="top-header">
+            <div class="brand-logo">
+                <div class="logo-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-title">Fault<span class="brand-highlight">Lens</span></span>
+                    <span class="brand-tagline">Deterministic Root Cause Analysis</span>
+                </div>
+            </div>
+
+            <div class="header-center-stats">
+                <div class="stat-chip status-healthy">
+                    <span class="pulse-dot"></span>
+                    <span id="header-system-status">SYSTEM OPERATIONAL</span>
+                </div>
+                <div class="stat-chip">
+                    <span class="chip-label">Active Window:</span>
+                    <span class="chip-val" id="header-window-size">3m (120s buffer)</span>
+                </div>
+                <div class="stat-chip">
+                    <span class="chip-label">Services Monitored:</span>
+                    <span class="chip-val" id="header-services-count">10</span>
+                </div>
+            </div>
+
+            <div class="header-right-controls">
+                <div class="rbac-user-pill">
+                    <span class="user-role-badge" id="current-role-badge">ADMIN</span>
+                    <span class="user-name" id="current-user-name">Alex Vance (Lead SRE)</span>
+                    <select id="role-selector" class="role-select">
+                        <option value="ADMIN">Role: Admin</option>
+                        <option value="ENGINEER">Role: Reliability Engineer</option>
+                        <option value="VIEWER">Role: Viewer (Read Only)</option>
+                    </select>
+                </div>
+                <button id="btn-refresh-telemetry" class="btn btn-secondary">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 4v6h-6"></path>
+                        <path d="M1 20v-6h6"></path>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Grid Layout -->
+        <main class="dashboard-grid">
+            <!-- Row 1: System Topology Map (The Map) & Simulation Studio -->
+            <section class="dashboard-card card-topology">
+                <div class="card-header">
+                    <div class="header-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="2" y1="12" x2="22" y2="12"></line>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                        </svg>
+                        <h2>Service Dependency Topology Map</h2>
+                        <span class="live-tag">LIVE GRAPH</span>
+                    </div>
+                    <div class="topology-legend">
+                        <span class="legend-item"><span class="legend-dot healthy"></span> Healthy</span>
+                        <span class="legend-item"><span class="legend-dot degraded"></span> Degraded</span>
+                        <span class="legend-item"><span class="legend-dot critical"></span> Anomaly Origin</span>
+                        <button id="btn-reset-topology-zoom" class="btn-icon" title="Reset Graph View">⟲</button>
+                    </div>
+                </div>
+                <div class="topology-canvas-container" id="topology-container">
+                    <canvas id="topology-canvas"></canvas>
+                    <div id="topology-tooltip" class="topology-tooltip hidden"></div>
+                </div>
+            </section>
+
+            <!-- Fault Injection Studio (Controls) -->
+            <section class="dashboard-card card-simulation">
+                <div class="card-header">
+                    <div class="header-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                        <h2>Fault Injection Studio</h2>
+                    </div>
+                </div>
+                <div class="simulation-controls">
+                    <p class="section-desc">Trigger synthetic distributed failure scenarios to test FaultLens deterministic RCA isolation in real-time.</p>
+                    <div class="form-group">
+                        <label for="sim-scenario-select">Select Incident Scenario:</label>
+                        <select id="sim-scenario-select" class="form-select">
+                            <option value="cascading_db_failure">⚡ Cascading DB Pool Exhaustion (payment-db)</option>
+                            <option value="payment_api_timeout">⌛ 3rd Party Payment Timeout (Stripe API)</option>
+                            <option value="out_of_order_logs">⏳ Delayed & Out-of-Order Telemetry Stream</option>
+                            <option value="memory_leak">🔥 ML Engine Memory Leak & Heap OOM</option>
+                            <option value="telemetry_flood">🛡️ Telemetry Flooding Attack (Rate Limit Test)</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group flex-1">
+                            <label for="sim-users-input">Simulated Users:</label>
+                            <input type="number" id="sim-users-input" value="84" min="10" max="500" class="form-input">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label for="sim-delay-input">Log Delay Buffer (s):</label>
+                            <input type="number" id="sim-delay-input" value="0" min="0" max="300" class="form-input">
+                        </div>
+                    </div>
+                    <button id="btn-trigger-simulation" class="btn btn-danger btn-full">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                        Inject Fault & Run RCA
+                    </button>
+                    <div id="sim-status-feedback" class="sim-feedback hidden"></div>
+                </div>
+            </section>
+
+            <!-- Row 2: Blast Radius & User Impact Quantization Card -->
+            <section class="dashboard-card card-blast-radius">
+                <div class="card-header">
+                    <div class="header-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <h2>Blast Radius & User Impact Quantization</h2>
+                    </div>
+                    <span class="time-window-badge" id="blast-window-label">Time Window: 3-Min Chunk</span>
+                </div>
+                <div class="blast-radius-grid">
+                    <div class="impact-metric-card alert-crimson">
+                        <span class="metric-label">Unique Affected Users</span>
+                        <span class="metric-value" id="blast-unique-users">84</span>
+                        <span class="metric-sub" id="blast-users-sub">Quantized in 3-min window</span>
+                    </div>
+                    <div class="impact-metric-card alert-warning">
+                        <span class="metric-label">Total Failed Requests</span>
+                        <span class="metric-value" id="blast-total-errors">126</span>
+                        <span class="metric-sub" id="blast-error-rate">Error Rate: 65.2%</span>
+                    </div>
+                    <div class="impact-metric-card">
+                        <span class="metric-label">Affected Microservices</span>
+                        <span class="metric-value" id="blast-affected-services-count">4</span>
+                        <span class="metric-sub" id="blast-services-list">api-gateway, order, payment, payment-db</span>
+                    </div>
+                    <div class="impact-metric-card">
+                        <span class="metric-label">Correlated Error Trace IDs</span>
+                        <span class="metric-value" id="blast-trace-count">18</span>
+                        <span class="metric-sub">Available for inspector</span>
+                    </div>
+                </div>
+                <div class="affected-users-drawer">
+                    <div class="drawer-header">
+                        <span>Affected User Identification Tokens:</span>
+                        <button id="btn-toggle-users-list" class="btn-text">Show User ID List (84)</button>
+                    </div>
+                    <div id="affected-users-container" class="users-chips-container hidden"></div>
+                </div>
+            </section>
+
+            <!-- Row 3: RCA Incident Breakdown & Smoking Gun Stack Trace -->
+            <section class="dashboard-card card-rca-report span-2">
+                <div class="card-header">
+                    <div class="header-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <h2>Deterministic RCA Incident Report</h2>
+                    </div>
+                    <div class="incident-badge-group">
+                        <span class="badge-incident-id" id="rca-incident-id">RCA-17746123-payment-db</span>
+                        <span class="badge-severity critical" id="rca-severity-badge">CRITICAL</span>
+                    </div>
+                </div>
+
+                <div class="rca-report-body">
+                    <!-- RCA Key Summary Box -->
+                    <div class="rca-summary-panel">
+                        <div class="rca-meta-row">
+                            <div class="meta-item">
+                                <span class="meta-lbl">Incident Trigger Service:</span>
+                                <span class="meta-val highlight-amber" id="rca-trigger-service">api-gateway</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-lbl">Root Cause Origin ("Match Lighter"):</span>
+                                <span class="meta-val highlight-crimson" id="rca-root-service">payment-db</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-lbl">Cascading Failure?</span>
+                                <span class="meta-val" id="rca-is-cascading">YES (4 Hop Propagation)</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-lbl">Trace ID:</span>
+                                <span class="meta-val mono" id="rca-trace-id">00f067aa0ba902b7da737809db0107d0</span>
+                            </div>
+                        </div>
+
+                        <div class="rca-cause-box">
+                            <div class="cause-header">Root Cause Isolation Summary:</div>
+                            <div class="cause-text" id="rca-root-message">
+                                FATAL: remaining connection slots are reserved for non-replication superuser connections. Maxpool 100/100 reached.
+                            </div>
+                        </div>
+
+                        <div class="rca-remediation-box">
+                            <span class="remediation-title">💡 Automated SRE Remediation Advice:</span>
+                            <span class="remediation-text" id="rca-remediation-text">Scale database connection pool for [payment-db], verify query timeouts, or restart active connections.</span>
+                        </div>
+                    </div>
+
+                    <!-- Smoking Gun Log Stack Trace -->
+                    <div class="stack-trace-container">
+                        <div class="stack-header">
+                            <span>🔥 Smoking-Gun Stack Trace Extraction</span>
+                            <span class="node-tag" id="stack-node-tag">Node: payment-db</span>
+                        </div>
+                        <pre class="stack-code" id="rca-stack-trace">psycopg2.OperationalError: FATAL: remaining connection slots reserved
+  File 'payment_db/pool.py', line 142, in getconn
+    raise PoolExhaustedError('Max DB connections 100/100 reached under heavy checkout surge')
+  File 'payment_service/repo.py', line 58, in execute_transaction
+    conn = self.pool.getconn(timeout=2.0)</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Row 4: Distributed Trace Inspector (Waterfall) -->
+            <section class="dashboard-card card-trace-inspector">
+                <div class="card-header">
+                    <div class="header-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                        </svg>
+                        <h2>Distributed Trace Inspector & Path Traversal</h2>
+                    </div>
+                    <span class="trace-status-label" id="trace-summary-label">4 Spans | Total Duration: 2300ms</span>
+                </div>
+                <div class="trace-waterfall-container" id="trace-waterfall">
+                    <!-- Dynamically populated waterfall spans -->
+                </div>
+            </section>
+
+            <!-- Row 5: Real-Time Metrics & Anomaly Panel -->
+            <section class="dashboard-card card-metrics">
+                <div class="card-header">
+                    <div class="header-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                        </svg>
+                        <h2>Metrics Radar & Anomaly Monitor</h2>
+                    </div>
+                </div>
+                <div class="metrics-grid" id="metrics-cards-grid">
+                    <!-- Dynamically rendered metric cards -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <span>FaultLens Observability Engine v1.0.0 &bull; Security Hardened (RBAC, Rate-Limited, Input Sanitized)</span>
+            <span class="footer-links">
+                <a href="/docs" target="_blank">FastAPI OpenAPI Specs</a> &bull;
+                <a href="/healthz" target="_blank">Health Check</a>
+            </span>
+        </footer>
+    </div>
+
+    <!-- Modular JS Scripts -->
+    <script src="js/components/topology_map.js"></script>
+    <script src="js/components/metrics_panel.js"></script>
+    <script src="js/components/trace_inspector.js"></script>
+    <script src="js/components/blast_radius.js"></script>
+    <script src="js/components/log_viewer.js"></script>
+    <script src="js/components/simulation_studio.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
